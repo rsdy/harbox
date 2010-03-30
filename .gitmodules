@@ -1,0 +1,3 @@
+[submodule "Cryptosuite"]
+	path = Cryptosuite
+	url = git://github.com/Cathedrow/Cryptosuite.git
