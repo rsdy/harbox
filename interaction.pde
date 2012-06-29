@@ -4,56 +4,69 @@
 #include "utils.h"
 #include "sha1.h"
 
-#define BUFFER_LEN 128
+InteractionClass Interaction;
 
-static char buffer[BUFFER_LEN];
-static uint8_t input_i;
+void
+InteractionClass::init(Stream& stream,
+		uint8_t* key,
+		uint8_t key_len,
+		command_handler *handlers,
+		uint8_t handlers_len) {
+	this->stream = &stream;
+	this->key = key;
+	this->key_len = key_len;
+	this->handlers = handlers;
+	this->handlers_len = handlers_len;
+}
 
-static void
-fill_buffer(void) {
+void
+InteractionClass::println(const char *msg)
+{
+	stream->println(msg);
+}
+
+void
+InteractionClass::fill_buffer(void) {
 	register char ch = 0;
-	input_i = 0;
+	buffer_len = 0;
 
 	for(;;) {
-		if(input_i < BUFFER_LEN) {
-			if (!Interaction::client.available())
+		if(buffer_len < LEN(buffer)) {
+			if(!stream->available())
 				continue;
 
-			ch = Interaction::client.read();
-			if (ch == '\n')
+			ch = stream->read();
+			if(ch == '\n')
 				break;
 			else
-				buffer[input_i++] = ch;
+				buffer[buffer_len++] = ch;
 		} else {
-			Interaction::client.read();
+			stream->read();
 		}
 	}
 }
 
-static int
-verify_buffer(void) {
-	uint8_t key_len = eeprom_read_byte((uint8_t *)Configuration::HMAC_KEY_LEN);
-	uint8_t key[128];
-	eeprom_read_block(key, (uint8_t *)Configuration::HMAC_KEY, key_len);
+int
+InteractionClass::verify_buffer(void) {
 	Sha1.initHmac(key, key_len);
-	for(uint8_t i = 0; i < input_i - 20; i++)
+	for(uint8_t i = 0; i < buffer_len - 20; i++)
 		Sha1.write(buffer[i]);
 
 	uint8_t *result = Sha1.resultHmac();
-	return memcmp(result, buffer + input_i - 20, 20);
+	return memcmp(result, buffer + buffer_len - 20, 20);
 }
 
 void
-Interaction::process_input(void) {
+InteractionClass::process_input(void) {
 	fill_buffer();
-	if(!(input_i > 20 && verify_buffer() == 0))
+	if(!(buffer_len > 20 && verify_buffer() == 0))
 		return;
 
-	buffer[input_i - 20] = 0;
+	buffer[buffer_len - 20] = 0;
 
-	for(uint8_t i = 0; i < LEN(handlers); i++) {
+	for(uint8_t i = 0; i < handlers_len; i++) {
 		if(handlers[i].command == buffer[0]) {
-			handlers[i].fn(0, buffer, input_i - 20);
+			handlers[i].fn(buffer + 1, buffer_len - 21);
 			break;
 		}
 	}
