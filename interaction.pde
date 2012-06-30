@@ -25,49 +25,44 @@ InteractionClass::println(const char *msg)
 	stream->println(msg);
 }
 
-void
-InteractionClass::fill_buffer(void) {
-	register char ch = 0;
-	buffer_len = 0;
-
-	for(;;) {
-		if(buffer_len < LEN(buffer)) {
-			if(!stream->available())
-				continue;
-
-			ch = stream->read();
-			if(ch == '\n')
-				break;
-			else
-				buffer[buffer_len++] = ch;
-		} else {
-			stream->read();
+command_handler*
+InteractionClass::find_command(char cmd) {
+	for(uint8_t i = 0; i < handlers_len; i++) {
+		if(handlers[i].command == cmd) {
+			return handlers + i;
 		}
 	}
-}
-
-int
-InteractionClass::verify_buffer(void) {
-	Sha1.initHmac(key, key_len);
-	for(uint8_t i = 0; i < buffer_len - 20; i++)
-		Sha1.write(buffer[i]);
-
-	uint8_t *result = Sha1.resultHmac();
-	return memcmp(result, buffer + buffer_len - 20, 20);
+	return 0;
 }
 
 void
 InteractionClass::process_input(void) {
-	fill_buffer();
-	if(!(buffer_len > 20 && verify_buffer() == 0))
+	if (stream->available() < 2)
 		return;
 
-	buffer[buffer_len - 20] = 0;
+	char cmd = stream->read();
+	input_len = stream->read();
 
-	for(uint8_t i = 0; i < handlers_len; i++) {
-		if(handlers[i].command == buffer[0]) {
-			handlers[i].fn(buffer + 1, buffer_len - 21);
-			break;
-		}
+	command_handler *handler = find_command(cmd);
+	if(handler == 0 || input_len >= LEN(buffer))
+		return;
+
+	while(stream->available() < input_len)
+		;
+
+	Sha1.initHmac(key, key_len);
+	uint8_t i = 0;
+	uint8_t data_len = input_len - 20;
+	for(; i < data_len && i < LEN(buffer); i++) {
+		buffer[i] = stream->read();
+		Sha1.write(buffer[i]);
+	}
+	for(; i < input_len && i < LEN(buffer); i++)
+		buffer[i] = stream->read();
+
+	uint8_t *result = Sha1.resultHmac();
+	if(memcmp(result, buffer + data_len, 20) == 0) {
+		buffer[data_len] = 0;
+		handler->fn(buffer, data_len);
 	}
 }
