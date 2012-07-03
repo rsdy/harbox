@@ -21,6 +21,7 @@ public:
 
 private:
 	inline command_handler* find_command(char cmd);
+	inline void empty_buffer(void);
 
 	uint8_t *key;
 	uint8_t key_len;
