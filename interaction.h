@@ -17,7 +17,7 @@ public:
 			uint8_t handlers_len);
 
 	void process_input(void);
-	inline void println(const char *line);
+	inline void write(const uint8_t *line, size_t len);
 
 private:
 	inline command_handler* find_command(char cmd);

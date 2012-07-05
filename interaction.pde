@@ -21,9 +21,13 @@ InteractionClass::init(Stream& stream,
 }
 
 void
-InteractionClass::println(const char *msg)
+InteractionClass::write(const uint8_t *msg, size_t len)
 {
-	stream->println(msg);
+	Sha1.initHmac(key, key_len);
+	Sha1.write(msg, len);
+
+	stream->write(msg, len);
+	stream->write(Sha1.resultHmac(), 20);
 }
 
 command_handler*

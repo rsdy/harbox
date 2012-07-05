@@ -13,7 +13,7 @@ command_handler commands[] = {
 
 static void
 echo(const char* const buf, const uint8_t buf_len) {
-	Interaction.println(buf);
+	Interaction.write((const uint8_t *)buf, buf_len);
 }
 
 void setup() {
