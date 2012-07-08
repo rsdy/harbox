@@ -30,11 +30,23 @@ def run_test name, cmd, msg, expected, key
     end
 end
 
-1.upto(3) { |x|
-  [['echo',       'e', 'test_msg_1', 'test_msg_1', 'asdf'],
-   ['wrong-echo', 'e', 'whatevz', '', 'asdf213'],
-   ['echo',       'e', 'test_msg_2', 'test_msg_2', 'asdf'],
-   ['wrong-command', ';', 'whatevz', '', 'asdf213']
+1.upto(2) { |x|
+  [
+   ['echo',          'e', 'test_msg_1',  'test_msg_1', 'asdf'],
+   ['wrong-echo',    'e', 'whatevz',     '',           'asdf213'],
+   ['echo',          'e', 'test_msg_2',  'test_msg_2', 'HMAC-key'],
+   ['wrong-command', ';', 'whatevz',     '',           'asdf'],
+   ['configuration', 'c', [127, 0, 0, 1,
+                           255, 255, 255, 0,
+                           0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
+                           192, 168, 1, 50,
+                           0x00,
+                           192, 168, 1, 102,
+                           10000 & 0xff00, 10000 & 0x00ff,
+                           4,
+                           0x61, 0x73, 0x64, 0x66].pack('C*'), 'OK', 'HMAC-key'],
+
+    ['reboot', 'b', '', '', 'asdf']
   ].each { |args| run_test *args }
 
   puts '---------------------'
