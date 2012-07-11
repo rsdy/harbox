@@ -23,11 +23,17 @@ InteractionClass::init(Stream& stream,
 void
 InteractionClass::write(const uint8_t *msg, size_t len)
 {
+	if(len > 108)
+		return;
+
+	uint8_t buffer[128];
 	Sha1.initHmac(key, key_len);
 	Sha1.write(msg, len);
 
-	stream->write(msg, len);
-	stream->write(Sha1.resultHmac(), 20);
+	// we send the data in one packet
+	memcpy(buffer, msg, len);
+	memcpy(buffer+len, Sha1.resultHmac(), 20);
+	stream->write(buffer, len + 20);
 }
 
 command_handler*
@@ -54,8 +60,8 @@ InteractionClass::process_input(void) {
 	uint8_t data_len;
 	uint8_t *result;
 
-	if (stream->available() < 2)
-		return;
+	while (stream->available() < 2)
+		;
 
 	cmd = stream->read();
 	input_len = stream->read();

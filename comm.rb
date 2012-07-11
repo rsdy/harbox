@@ -1,10 +1,12 @@
 #!/usr/bin/ruby1.8
 
 require 'rubygems'
-require 'serialport'
+#require 'serialport'
 require 'openssl'
 
-@ser = SerialPort.new ARGV[0], ARGV[1].to_i, 8, 1, SerialPort::NONE
+require 'socket'
+
+#@ser = SerialPort.new ARGV[0], ARGV[1].to_i, 8, 1, SerialPort::NONE
 
 def put_data cmd, msg, key, hash
   @ser.putc cmd
@@ -14,12 +16,13 @@ def put_data cmd, msg, key, hash
 end
 
 def run_test name, cmd, msg, expected, key
+  @ser = TCPSocket.open '192.168.1.254', 23
   output_hash = OpenSSL::HMAC.digest('sha1', key, msg)
   expected_hash = OpenSSL::HMAC.digest('sha1', key, expected)
 
   put_data cmd, msg, key, output_hash
   sleep 0.1
-  answer = @ser.read
+  answer = @ser.readpartial(128) rescue ''
   puts case
     when answer[0...-20] != expected
       "FAIL - #{name} - received: #{answer} (len: #{answer.length})"
@@ -30,7 +33,7 @@ def run_test name, cmd, msg, expected, key
     end
 end
 
-1.upto(2) { |x|
+1.upto(1) { |x|
   [
    ['echo',          'e', 'test_msg_1',  'test_msg_1', 'asdf'],
    ['wrong-echo',    'e', 'whatevz',     '',           'asdf213'],
