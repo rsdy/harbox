@@ -8,12 +8,10 @@
 InteractionClass Interaction;
 
 void
-InteractionClass::init(Stream& stream,
-		uint8_t* key,
+InteractionClass::init(uint8_t* key,
 		uint8_t key_len,
 		command_handler *handlers,
 		uint8_t handlers_len) {
-	this->stream = &stream;
 	this->key = key;
 	this->key_len = key_len;
 	this->handlers = handlers;

@@ -10,8 +10,7 @@ typedef struct _command_handler {
 
 class InteractionClass {
 public:
-	void init(Stream& stream,
-			uint8_t* key,
+	void init(uint8_t* key,
 			uint8_t key_len,
 			command_handler *handlers,
 			uint8_t handlers_len);
@@ -19,13 +18,14 @@ public:
 	void process_input(void);
 	inline void write(const uint8_t *line, size_t len);
 
+	Stream *stream;
+
 private:
 	inline command_handler* find_command(char cmd);
 	inline void empty_buffer(void);
 
 	uint8_t *key;
 	uint8_t key_len;
-	Stream *stream;
 	char buffer[128];
 	int input_len;
 	command_handler *handlers;
