@@ -20,12 +20,18 @@
 static SoftwareSerialLCD LCD = SoftwareSerialLCD(LCD_PIN);
 static CWL1 RFID = CWL1(&Serial);
 
-static EthernetServer server = EthernetServer(23);
+static EthernetServer service_port = EthernetServer(23);
+static EthernetClient server; // this is the connection towards the server to which we send the data
+
+static bool error_displayed = false;
+static uint32_t last_comm = 0;
 
 static uint8_t gateway[4] = {127, 0, 0, 1};
 static uint8_t netmask[4] = {255, 255, 255, 0};
 static uint8_t mac[6] = {0x55, 0xee, 0xdd, 0xaa, 0xbb, 0xcc};
 static uint8_t ip[4] = {192, 168, 1, 254};
+static uint8_t host[4] = {192, 168, 1, 100};
+static uint16_t port = 10000;
 
 static uint8_t key[10];
 static uint8_t key_len;
@@ -75,40 +81,81 @@ void setup() {
 	LCD.begin(9600);
 	LCD.backlight_on();
 	LCD.clear();
-	LCD.position(0, 0);
 
 	if (eeprom_read_byte((uint8_t *)CONFIG) == 1) {
 		key_len = eeprom_read_byte((uint8_t *)HMAC_KEY_LEN);
+		port = eeprom_read_word((uint16_t *)PORT);
 
 		eeprom_read_block(key, (uint8_t *)HMAC_KEY, key_len);
 		eeprom_read_block(gateway, (uint8_t *)GATEWAY, 4);
 		eeprom_read_block(netmask, (uint8_t *)NETMASK, 4);
 		eeprom_read_block(mac, (uint8_t *)MAC, 6);
 		eeprom_read_block(ip, (uint8_t *)IP, 4);
+		eeprom_read_block(host, (uint8_t *)HOST, 4);
 	} else {
 		key_len = LEN("HMAC-key");
 		memcpy(key, "HMAC-key", key_len);
 	}
 
-	Ethernet.begin(mac, ip);
-	server.begin();
+	Ethernet.begin(mac, ip, gateway, gateway, netmask);
+	service_port.begin();
 
-	delay(1000);
-	LCD.write("what");
+	Interaction.init(key, key_len, commands, LEN(commands));
 }
 
 void loop() {
-	uint8_t *buffer;
+	uint8_t *rfid;
+	uint8_t output_buffer[7];
 
-	EthernetClient client = server.available();
+	Interaction.stream = &server;
+	Interaction.process_input();
+
+	EthernetClient client = service_port.available();
 	if(client == true) {
-		if(client.connected()) {
-			Interaction.init(client, key, key_len, commands, LEN(commands));
-			Interaction.process_input();
-			client.stop();
-		}
+		Interaction.stream = &client;
+
+		while(!client.available())
+			;
+
+		Interaction.process_input();
+		client.stop();
 	}
 
-	if((buffer = RFID.read()) != 0)
-		LCD.write(buffer, 10);
+	if(!server.connected()) {
+		if(!error_displayed) {
+			LCD.clear();
+			LCD.print("A szerver nem   elerheto!");
+			error_displayed = true;
+		}
+
+		server.stop();
+		server.connect(host, port);
+		last_comm = millis();
+	}
+	else {
+		if(error_displayed) {
+			LCD.clear();
+			LCD.print("OK");
+			error_displayed = false;
+		}
+
+		Interaction.stream = &server;
+		Interaction.process_input();
+	}
+
+	if(millis() - last_comm > 5*1000 && server.connected()) {
+		server.stop();
+	}
+
+	if(server.connected() && (rfid = RFID.read()) != 0) {
+		error_displayed = false;
+		Interaction.stream = &server;
+
+		output_buffer[0] = 't';
+		output_buffer[1] = 25;
+
+		// we will let the interaction class handle the rest of the packet
+		memcpy(output_buffer + 2, rfid, 5);
+		Interaction.write(output_buffer, 7);
+	}
 }
