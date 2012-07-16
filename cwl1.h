@@ -9,7 +9,7 @@ public:
 	uint8_t* read(void);
 
 private:
-	uint8_t buffer[11];
+	uint8_t buffer[5];
 	Stream* stream;
 };
 
