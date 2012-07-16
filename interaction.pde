@@ -60,8 +60,8 @@ InteractionClass::process_input(void) {
 	uint8_t data_len;
 	uint8_t *result;
 
-	while (stream->available() < 2)
-		;
+	if(stream->available() < 2)
+		return;
 
 	cmd = stream->read();
 	input_len = stream->read();
