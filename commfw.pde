@@ -33,13 +33,22 @@ static uint8_t key_len;
 static void echo(const char* const buf, const uint8_t buf_len);
 static void configure_board(const char* const buf, const uint8_t buf_len);
 static void reboot_bootloader(const char* const unused, const uint8_t unused2);
+static void print_to_lcd(const char* const buf, const uint8_t buf_len);
 
 static command_handler commands[] = {
 	{'e', echo},
 	{'c', configure_board},
 	{'r', (handler_fn)reboot},
+	{'p', print_to_lcd},
 	{'b', reboot_bootloader}
 };
+
+static void
+print_to_lcd(const char* const buf, const uint8_t buf_len) {
+	LCD.clear();
+	LCD.write((const uint8_t *)buf, buf_len);
+	last_comm = millis();
+}
 
 static void
 echo(const char* const buf, const uint8_t buf_len) {
