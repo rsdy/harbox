@@ -59,6 +59,7 @@ print_to_lcd(const char* const buf, const uint8_t buf_len) {
 static void
 echo(const char* const buf, const uint8_t buf_len) {
 	Interaction.write((const uint8_t *)buf, buf_len);
+	last_comm = millis();
 }
 
 static void
