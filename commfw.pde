@@ -16,6 +16,8 @@
 #include "utils.h"
 
 #define LCD_PIN 2
+#define STRING_NO_SERVER "Can't connect to server!"
+#define STRING_OK_SERVER "OK"
 
 static SoftwareSerialLCD LCD = SoftwareSerialLCD(LCD_PIN);
 static CWL1 RFID = CWL1(&Serial);
@@ -125,7 +127,7 @@ void loop() {
 	if(!server.connected()) {
 		if(!error_displayed) {
 			LCD.clear();
-			LCD.print("A szerver nem   elerheto!");
+			LCD.print(STRING_NO_SERVER);
 			error_displayed = true;
 		}
 
@@ -136,7 +138,7 @@ void loop() {
 	else {
 		if(error_displayed) {
 			LCD.clear();
-			LCD.print("OK");
+			LCD.print(STRING_OK_SERVER);
 			error_displayed = false;
 		}
 
