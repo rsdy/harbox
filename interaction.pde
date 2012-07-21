@@ -65,7 +65,9 @@ InteractionClass::process_input(void) {
 	input_len = stream->read();
 
 	command_handler *handler = find_command(cmd);
-	while(stream->available() < input_len)
+	for(uint8_t available = stream->available();
+			available < input_len && available < LEN(buffer);
+			available = stream->available())
 		;
 
 	if(handler == 0)
@@ -74,6 +76,9 @@ InteractionClass::process_input(void) {
 	i = 0;
 	data_len = input_len - 20;
 	Sha1.initHmac(key, key_len);
+	Sha1.write(cmd);
+	Sha1.write(input_len);
+
 	for(; i < data_len && i < LEN(buffer); i++) {
 		buffer[i] = stream->read();
 		Sha1.write(buffer[i]);
