@@ -32,7 +32,7 @@ require 'socket'
 @read_delay = 0.1
 
 def stream
-  return TCPSocket.open @ip, @port if ARGV[0] == '--net'
+  return TCPSocket.open @ip, @port if ARGV.include? '--net'
   @serialport ||= SerialPort.new @device, @baud, 8, 1, SerialPort::NONE
 end
 
@@ -70,22 +70,29 @@ end
 
 ### test cases
 run_testset 2, [
+## name              cmd  msg            answer        hmac key
    ['echo',          'e', 'testwhat1',   'testwhat1',  'asdf'],
    ['echo',          'e', 'testwhat1',   'testwhat1',  'asdf'],
    ['wrong-echo',    'e', 'whatevz',     '',           'asdf213'],
    ['echo',          'e', 'test_msg_2',  'test_msg_2', 'asdf'],
    ['wrong-command', ';', 'whatevz',     '',           'asdf'],
-   #['configuration', 'c', [127, 0, 0, 1,
-                           #255, 255, 255, 0,
-                           #0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
-                           #192, 168, 1, 50,
-                           #0x00,
-                           #192, 168, 1, 102,
-                           #10000 & 0x00ff, (10000 & 0xff00) >> 8, # little endian
-                           #4,
-                           #0x61, 0x73, 0x64, 0x66].pack('C*'), 'OK', 'HMAC-key'],
+   ['echo',          'e', 'test_msg_3',  'test_msg_3', 'asdf'],
+]
 
-    #['reboot', 'b', '', '', 'asdf']
-  ]
+if false
+run_testset 1, [
+   ['configuration', 'c', [127, 0, 0, 1,
+                           255, 255, 255, 0,
+                           0x00, 0x11, 0x22, 0x33, 0x44, 0x55,
+                           192, 168, 1, 50,
+                           0x00,
+                           192, 168, 1, 102,
+                           10000 & 0x00ff, (10000 & 0xff00) >> 8, # little endian
+                           4,
+                           0x61, 0x73, 0x64, 0x66].pack('C*'), 'OK', 'HMAC-key'],
+
+    ['reboot', 'b', '', '', 'asdf']
+]
+end
 
 @serialport.close if @serialport
