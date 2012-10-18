@@ -135,11 +135,6 @@ Issues
 ------
 
  * The connection timeout cannot be configured, but is hardcoded.
- * If the connetion times out, the devices actually floods the server with TCP
-   SYN packets, which are then answered by the host with ICMP
-   destination port unreachable or with ICMP destination host unreachable by
-   the gateway. Needless to say, this generates quite some network traffic.
-   Should use some kind of a timeout.
  * The 128 bytes max packet length are used throughout the code as literals.
    Should use defines instead.
  * Same for the 10 bytes max length of the HMAC key.
