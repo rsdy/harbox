@@ -152,9 +152,11 @@ void loop() {
 			error_displayed = true;
 		}
 
-		server.stop();
-		server.connect(host, port);
-		last_comm = millis();
+		if((millis() - last_comm) > 1000) {
+			server.stop();
+			server.connect(host, port);
+			last_comm = millis();
+		}
 	}
 	else {
 		if(error_displayed) {
