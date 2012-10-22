@@ -117,7 +117,7 @@ void setup() {
 		eeprom_read_block(ip, (uint8_t *)IP, 4);
 		eeprom_read_block(host, (uint8_t *)HOST, 4);
 	} else {
-		key_len = LEN("HMAC-key");
+		key_len = LEN("HMAC-key") - 1;
 		memcpy(key, "HMAC-key", key_len);
 	}
 
